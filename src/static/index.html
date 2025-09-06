@@ -480,6 +480,14 @@
                 document.getElementById('emptyState').style.display = 'none';
                 document.getElementById('editorForm').style.display = 'block';
                 document.getElementById('editorActions').style.display = 'flex';
+
+                // Hide delete button for new notes (no id)
+                const deleteBtn = document.getElementById('deleteBtn');
+                if (this.currentNote && this.currentNote.id) {
+                    deleteBtn.style.display = '';
+                } else {
+                    deleteBtn.style.display = 'none';
+                }
             }
 
             hideEditor() {
