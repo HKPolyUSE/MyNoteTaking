@@ -16,8 +16,16 @@ def create_note():
         data = request.json
         if not data or 'title' not in data or 'content' not in data:
             return jsonify({'error': 'Title and content are required'}), 400
-        
+
         note = Note(title=data['title'], content=data['content'])
+
+        # optional fields
+        tags = data.get('tags')
+        if tags is not None:
+            note.set_tags_list(tags)
+
+        note.event_date = data.get('event_date')
+        note.event_time = data.get('event_time')
         db.session.add(note)
         db.session.commit()
         return jsonify(note.to_dict()), 201
@@ -43,6 +51,16 @@ def update_note(note_id):
         
         note.title = data.get('title', note.title)
         note.content = data.get('content', note.content)
+
+        # optional fields
+        if 'tags' in data:
+            note.set_tags_list(data.get('tags'))
+
+        if 'event_date' in data:
+            note.event_date = data.get('event_date')
+
+        if 'event_time' in data:
+            note.event_time = data.get('event_time')
         db.session.commit()
         return jsonify(note.to_dict())
     except Exception as e:
@@ -68,8 +86,11 @@ def search_notes():
     if not query:
         return jsonify([])
     
+    # Basic search: title, content, and tags (tags stored as JSON text)
     notes = Note.query.filter(
-        (Note.title.contains(query)) | (Note.content.contains(query))
+        (Note.title.contains(query)) |
+        (Note.content.contains(query)) |
+        (Note.tags.contains(query))
     ).order_by(Note.updated_at.desc()).all()
     
     return jsonify([note.to_dict() for note in notes])

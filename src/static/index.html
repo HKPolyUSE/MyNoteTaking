@@ -361,6 +361,22 @@
                         <label class="form-label" for="noteContent">Content</label>
                         <textarea class="form-textarea" id="noteContent" placeholder="Start writing your note..."></textarea>
                     </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="noteTags">Tags (comma-separated)</label>
+                        <input type="text" class="form-input" id="noteTags" placeholder="e.g. work, personal, idea">
+                    </div>
+
+                    <div class="form-group" style="display:flex; gap:10px;">
+                        <div style="flex:1;">
+                            <label class="form-label" for="noteDate">Event Date</label>
+                            <input type="date" class="form-input" id="noteDate">
+                        </div>
+                        <div style="flex:1;">
+                            <label class="form-label" for="noteTime">Event Time</label>
+                            <input type="time" class="form-input" id="noteTime">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="empty-state" id="emptyState">
@@ -404,6 +420,9 @@
                 
                 document.getElementById('noteTitle').addEventListener('input', autoSave);
                 document.getElementById('noteContent').addEventListener('input', autoSave);
+                document.getElementById('noteTags')?.addEventListener('input', autoSave);
+                document.getElementById('noteDate')?.addEventListener('change', autoSave);
+                document.getElementById('noteTime')?.addEventListener('change', autoSave);
             }
 
             async loadNotes() {
@@ -437,7 +456,8 @@
                          data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
                         <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
                         <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
-                        <div class="note-date">${this.formatDate(note.updated_at)}</div>
+                        <div class="note-date">${this.formatDate(note.updated_at)} ${note.event_date ? ' • ' + note.event_date : ''} ${note.event_time ? note.event_time : ''}</div>
+                        ${note.tags && note.tags.length ? `<div class="note-tags">${note.tags.map(t=>`<span>#${this.escapeHtml(t)}</span>`).join(' ')}</div>` : ''}
                     </div>
                 `).join('');
             }
@@ -452,6 +472,9 @@
                 
                 document.getElementById('noteTitle').value = note.title || '';
                 document.getElementById('noteContent').value = note.content || '';
+                document.getElementById('noteTags').value = (note.tags && note.tags.length) ? note.tags.join(', ') : '';
+                document.getElementById('noteDate').value = note.event_date || '';
+                document.getElementById('noteTime').value = note.event_time || '';
                 document.getElementById('editorTitle').textContent = note.title || 'Untitled Note';
             }
 
@@ -467,6 +490,9 @@
                 this.showEditor();
                 document.getElementById('noteTitle').value = '';
                 document.getElementById('noteContent').value = '';
+                document.getElementById('noteTags').value = '';
+                document.getElementById('noteDate').value = '';
+                document.getElementById('noteTime').value = '';
                 document.getElementById('editorTitle').textContent = 'New Note';
                 document.getElementById('noteTitle').focus();
                 
@@ -503,6 +529,10 @@
 
                 const title = document.getElementById('noteTitle').value.trim();
                 const content = document.getElementById('noteContent').value.trim();
+                const tagsRaw = document.getElementById('noteTags').value.trim();
+                const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [];
+                const event_date = document.getElementById('noteDate').value || null;
+                const event_time = document.getElementById('noteTime').value || null;
 
                 if (!title && !content) {
                     if (!isAutoSave) {
@@ -514,7 +544,10 @@
                 try {
                     const noteData = {
                         title: title || 'Untitled',
-                        content: content
+                        content: content,
+                        tags: tags,
+                        event_date: event_date,
+                        event_time: event_time
                     };
 
                     let response;
