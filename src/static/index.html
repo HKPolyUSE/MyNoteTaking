@@ -105,6 +105,25 @@
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
+        .generate-note-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .generate-note-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
         .notes-list {
             max-height: 500px;
             overflow-y: auto;
@@ -321,6 +340,154 @@
         .notes-list::-webkit-scrollbar-thumb:hover {
             background: #5a6fd8;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin: 0;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #333;
+        }
+
+        .generate-form {
+            margin-bottom: 25px;
+        }
+
+        .generated-preview {
+            display: none;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .generated-preview.show {
+            display: block;
+        }
+
+        .preview-header {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #495057;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+
+        .preview-field {
+            margin-bottom: 15px;
+        }
+
+        .preview-label {
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .preview-value {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            min-height: 20px;
+        }
+
+        .preview-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .preview-tag {
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-generate:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -334,6 +501,7 @@
             <div class="sidebar">
                 <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search notes...">
                 <button class="new-note-btn" id="newNoteBtn">✨ New Note</button>
+                <button class="generate-note-btn" id="generateNoteBtn">🤖 Generate Note</button>
                 
                 <div class="notes-list" id="notesList">
                     <div class="loading">Loading notes...</div>
@@ -393,12 +561,66 @@
         </div>
     </div>
 
+    <!-- Generate Note Modal -->
+    <div id="generateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🤖 Generate Note with AI</h2>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            
+            <div class="generate-form">
+                <div class="form-group">
+                    <label class="form-label" for="generateInput">Describe what you want to note (in natural language):</label>
+                    <textarea class="form-textarea" id="generateInput" 
+                             placeholder="e.g. 'Badminton tomorrow 5pm at PolyU' or 'Learn Python programming and Docker containers'" 
+                             style="min-height: 120px;"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="generateLanguage">Output Language:</label>
+                    <select id="generateLanguage" class="form-input">
+                        <option value="English">English</option>
+                        <option value="Chinese">Chinese</option>
+                        <option value="Japanese">Japanese</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="generated-preview" id="generatedPreview">
+                <div class="preview-header">📝 Generated Note Preview</div>
+                
+                <div class="preview-field">
+                    <div class="preview-label">Title:</div>
+                    <div class="preview-value" id="previewTitle"></div>
+                </div>
+                
+                <div class="preview-field">
+                    <div class="preview-label">Content:</div>
+                    <div class="preview-value" id="previewContent"></div>
+                </div>
+                
+                <div class="preview-field">
+                    <div class="preview-label">Tags:</div>
+                    <div class="preview-tags" id="previewTags"></div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="cancelGenerate">Cancel</button>
+                <button class="btn btn-generate" id="generateBtn">Generate</button>
+                <button class="btn btn-confirm" id="confirmGenerate" style="display: none;">Save Note</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         class NoteTaker {
             constructor() {
                 this.notes = [];
                 this.currentNote = null;
                 this.isLoading = false;
+                this.generatedNoteData = null;
                 this.init();
             }
 
@@ -409,10 +631,24 @@
 
             bindEvents() {
                 document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
+                document.getElementById('generateNoteBtn').addEventListener('click', () => this.openGenerateModal());
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
                 document.getElementById('translateBtn').addEventListener('click', () => this.translateCurrentNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
+                
+                // Generate modal events
+                document.getElementById('closeModal').addEventListener('click', () => this.closeGenerateModal());
+                document.getElementById('cancelGenerate').addEventListener('click', () => this.closeGenerateModal());
+                document.getElementById('generateBtn').addEventListener('click', () => this.generateNote());
+                document.getElementById('confirmGenerate').addEventListener('click', () => this.confirmGeneratedNote());
+                
+                // Close modal when clicking outside
+                document.getElementById('generateModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'generateModal') {
+                        this.closeGenerateModal();
+                    }
+                });
                 
                 // Auto-save on content change (debounced)
                 let saveTimeout;
@@ -713,6 +949,139 @@
                     return `${diffDays - 1} days ago`;
                 } else {
                     return date.toLocaleDateString();
+                }
+            }
+
+            // Generate Note Modal Methods
+            openGenerateModal() {
+                document.getElementById('generateModal').style.display = 'block';
+                document.getElementById('generateInput').value = '';
+                document.getElementById('generateLanguage').value = 'English';
+                document.getElementById('generatedPreview').classList.remove('show');
+                document.getElementById('generateBtn').style.display = '';
+                document.getElementById('confirmGenerate').style.display = 'none';
+                this.generatedNoteData = null;
+                document.getElementById('generateInput').focus();
+            }
+
+            closeGenerateModal() {
+                document.getElementById('generateModal').style.display = 'none';
+                this.generatedNoteData = null;
+            }
+
+            async generateNote() {
+                const input = document.getElementById('generateInput').value.trim();
+                const language = document.getElementById('generateLanguage').value;
+
+                if (!input) {
+                    this.showMessage('Please enter some text to generate a note', 'error');
+                    return;
+                }
+
+                // Show loading state
+                const generateBtn = document.getElementById('generateBtn');
+                const originalText = generateBtn.textContent;
+                generateBtn.textContent = 'Generating...';
+                generateBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/api/notes/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            input: input,
+                            language: language
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({error: 'Unknown error'}));
+                        throw new Error(errorData.error || 'Failed to generate note');
+                    }
+
+                    this.generatedNoteData = await response.json();
+                    this.displayGeneratedPreview();
+
+                } catch (error) {
+                    this.showMessage(`Error generating note: ${error.message}`, 'error');
+                } finally {
+                    generateBtn.textContent = originalText;
+                    generateBtn.disabled = false;
+                }
+            }
+
+            displayGeneratedPreview() {
+                if (!this.generatedNoteData) return;
+
+                // Update preview content
+                document.getElementById('previewTitle').textContent = this.generatedNoteData.title || 'Untitled';
+                document.getElementById('previewContent').textContent = this.generatedNoteData.content || 'No content';
+                
+                // Update tags
+                const tagsContainer = document.getElementById('previewTags');
+                if (this.generatedNoteData.tags && this.generatedNoteData.tags.length > 0) {
+                    tagsContainer.innerHTML = this.generatedNoteData.tags.map(tag => 
+                        `<span class="preview-tag">${this.escapeHtml(tag)}</span>`
+                    ).join('');
+                } else {
+                    tagsContainer.innerHTML = '<span style="color: #999; font-style: italic;">No tags</span>';
+                }
+
+                // Show preview and hide generate button, show confirm button
+                document.getElementById('generatedPreview').classList.add('show');
+                document.getElementById('generateBtn').style.display = 'none';
+                document.getElementById('confirmGenerate').style.display = '';
+            }
+
+            async confirmGeneratedNote() {
+                if (!this.generatedNoteData) return;
+
+                // Show loading state
+                const confirmBtn = document.getElementById('confirmGenerate');
+                const originalText = confirmBtn.textContent;
+                confirmBtn.textContent = 'Saving...';
+                confirmBtn.disabled = true;
+
+                try {
+                    // Save the generated note directly to the database
+                    const noteData = {
+                        title: this.generatedNoteData.title || 'Generated Note',
+                        content: this.generatedNoteData.content || '',
+                        tags: this.generatedNoteData.tags || [],
+                        event_date: null,
+                        event_time: null
+                    };
+
+                    const response = await fetch('/api/notes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(noteData)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({error: 'Unknown error'}));
+                        throw new Error(errorData.error || 'Failed to save note');
+                    }
+
+                    const savedNote = await response.json();
+
+                    // Close the modal
+                    this.closeGenerateModal();
+
+                    // Refresh the notes list to show the new note
+                    await this.loadNotes();
+
+                    // Select and display the newly created note
+                    this.selectNote(savedNote.id);
+
+                    // Show success message
+                    this.showMessage('Generated note saved successfully!', 'success');
+
+                } catch (error) {
+                    this.showMessage(`Error saving generated note: ${error.message}`, 'error');
+                } finally {
+                    confirmBtn.textContent = originalText;
+                    confirmBtn.disabled = false;
                 }
             }
         }

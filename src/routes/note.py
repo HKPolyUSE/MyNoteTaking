@@ -124,3 +124,53 @@ def translate_note(note_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@note_bp.route('/notes/generate', methods=['POST'])
+def generate_note():
+    """Generate a new note from natural language input using src.llm.process_user_notes
+
+    Request JSON: { "input": "natural language text", "language": "English" | "Chinese" | "Japanese" }
+    """
+    data = request.json or {}
+    user_input = data.get('input', '').strip()
+    language = data.get('language', 'English')
+
+    if not user_input:
+        return jsonify({'error': 'Input text is required'}), 400
+
+    allowed_languages = {'Chinese', 'English', 'Japanese'}
+    if language not in allowed_languages:
+        return jsonify({'error': f'Unsupported language. Allowed: {sorted(list(allowed_languages))}'}), 400
+
+    try:
+        # Use llm.process_user_notes to generate structured note
+        response_content = llm.process_user_notes(language, user_input)
+        
+        # Parse the JSON response
+        import json
+        try:
+            note_data = json.loads(response_content)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, try to extract JSON from the response
+            import re
+            json_match = re.search(r'\{.*\}', response_content, re.DOTALL)
+            if json_match:
+                note_data = json.loads(json_match.group())
+            else:
+                raise ValueError("Could not parse JSON from LLM response")
+
+        # Validate required fields
+        if 'Title' not in note_data or 'Notes' not in note_data:
+            return jsonify({'error': 'Generated note is missing required fields'}), 500
+
+        # Return the generated note data (not saved to database yet)
+        return jsonify({
+            'title': note_data.get('Title', ''),
+            'content': note_data.get('Notes', ''),
+            'tags': note_data.get('Tags', []),
+            'original_input': user_input
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Failed to generate note: {str(e)}'}), 500
+
