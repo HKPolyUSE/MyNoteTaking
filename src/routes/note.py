@@ -168,6 +168,8 @@ def generate_note():
             'title': note_data.get('Title', ''),
             'content': note_data.get('Notes', ''),
             'tags': note_data.get('Tags', []),
+            'event_date': note_data.get('Date', ''),
+            'event_time': note_data.get('Time', ''),
             'original_input': user_input
         })
 

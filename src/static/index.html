@@ -604,6 +604,16 @@
                     <div class="preview-label">Tags:</div>
                     <div class="preview-tags" id="previewTags"></div>
                 </div>
+                
+                <div class="preview-field" id="previewDateField" style="display: none;">
+                    <div class="preview-label">Event Date:</div>
+                    <div class="preview-value" id="previewDate"></div>
+                </div>
+                
+                <div class="preview-field" id="previewTimeField" style="display: none;">
+                    <div class="preview-label">Event Time:</div>
+                    <div class="preview-value" id="previewTime"></div>
+                </div>
             </div>
 
             <div class="modal-actions">
@@ -1027,6 +1037,26 @@
                     tagsContainer.innerHTML = '<span style="color: #999; font-style: italic;">No tags</span>';
                 }
 
+                // Update date field
+                const dateField = document.getElementById('previewDateField');
+                const dateValue = document.getElementById('previewDate');
+                if (this.generatedNoteData.event_date) {
+                    dateValue.textContent = this.generatedNoteData.event_date;
+                    dateField.style.display = 'block';
+                } else {
+                    dateField.style.display = 'none';
+                }
+
+                // Update time field
+                const timeField = document.getElementById('previewTimeField');
+                const timeValue = document.getElementById('previewTime');
+                if (this.generatedNoteData.event_time) {
+                    timeValue.textContent = this.generatedNoteData.event_time;
+                    timeField.style.display = 'block';
+                } else {
+                    timeField.style.display = 'none';
+                }
+
                 // Show preview and hide generate button, show confirm button
                 document.getElementById('generatedPreview').classList.add('show');
                 document.getElementById('generateBtn').style.display = 'none';
@@ -1048,8 +1078,8 @@
                         title: this.generatedNoteData.title || 'Generated Note',
                         content: this.generatedNoteData.content || '',
                         tags: this.generatedNoteData.tags || [],
-                        event_date: null,
-                        event_time: null
+                        event_date: this.generatedNoteData.event_date || null,
+                        event_time: this.generatedNoteData.event_time || null
                     };
 
                     const response = await fetch('/api/notes', {

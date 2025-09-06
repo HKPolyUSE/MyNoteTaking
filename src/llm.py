@@ -33,27 +33,43 @@ def translate(language, text):
 
 # When User inputs free-form notes, the LLM processes the text to extract and organize information into predefined structured fields in JSON format
 system_prompt = '''
+Current date and time:
+- "date": "{date}",
+- "time": "{time}"
+
 Extract the user's notes into the following structured fields:
-1. Title: A concise title of the notes less than 5 words
+1. Title: A concise title summarizing the main topic of the notes.
 2. Notes: The notes based on user input written in full sentences.
 3. Tags (A list):  At most 3 Keywords or tags that categorize the content of the notes.
+4. Date (Optional): The date of the event in YYYY-MM-DD format.
+5. Time (Optional): The time of the event in HH:MM format (24-hour clock).
 
 
-Output in JSON format without ```json. Output title and notes in the language: {lang}.
+
+Output in JSON format without ```json. Output in language: {lang}.
 Example:
 Input: "Badminton tmr 5pm @polyu".
 Output:
 {{
-  "Title": "Badminton at PolyU", 
+  "Title": "Play badminton tmr 5pm", 
   "Notes": "Remember to play badminton at 5pm tomorrow at PolyU.",
-  "Tags": ["badminton", "sports"]
+  "Tags": ["badminton", "sports"],
+  "Date": "2023-10-05",
+  "Time": "17:00"
 }}
 
 '''
 
 def process_user_notes(language, user_input):
+    from datetime import datetime
+    now = datetime.now()
+    date_str = now.strftime("%Y-%m-%d")
+    time_str = now.strftime("%H:%M")
+
     system_prompt_filled = system_prompt.format(
-        lang=language
+        lang=language,
+        date=date_str,
+        time=time_str
     )
     
     messages = [
