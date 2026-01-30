@@ -59,6 +59,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             backdrop-filter: blur(10px);
             height: fit-content;
+            min-width: 0; /* allow grid/flex children to shrink and prevent overflow */
         }
 
         .note-editor {
@@ -69,6 +70,7 @@
             backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
+            min-width: 0; /* prevent long words from forcing the editor wider */
         }
 
         .search-box {
@@ -164,6 +166,13 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            overflow-wrap: anywhere; /* handle very long unbroken text */
+            word-break: break-word;
+        }
+
+        .note-item, .note-title {
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .note-date {
@@ -255,6 +264,8 @@
             resize: vertical;
             transition: border-color 0.3s ease;
             line-height: 1.6;
+            overflow-wrap: anywhere; /* break long words to avoid layout shift */
+            word-break: break-word;
         }
 
         .form-textarea:focus {
