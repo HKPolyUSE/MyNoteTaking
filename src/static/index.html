@@ -243,6 +243,17 @@
             border-color: #667eea;
         }
 
+        .translation-result {
+            margin-top: 20px;
+        }
+
+        .translation-result pre {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font: inherit;
+            line-height: 1.6;
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -345,7 +356,8 @@
                     <h2 class="editor-title" id="editorTitle">Select a note to edit</h2>
                     <div class="editor-actions" id="editorActions" style="display: none;">
                         <button class="btn btn-save" id="saveBtn">💾 Save</button>
-                        <button class="btn btn-delete" id="deleteBtn">🗑️ Delete</button>
+                        <button class="btn" id="translateBtn" title="Translate note to Traditional Chinese">Translate</button>
+                        <button class="btn btn-delete" id="deleteBtn" hidden>🗑️ Delete</button>
                     </div>
                 </div>
 
@@ -360,6 +372,10 @@
                     <div class="form-group">
                         <label class="form-label" for="noteContent">Content</label>
                         <textarea class="form-textarea" id="noteContent" placeholder="Start writing your note..."></textarea>
+                    </div>
+                    <div class="translation-result" id="translationResult" hidden>
+                        <label class="form-label">Traditional Chinese translation</label>
+                        <pre id="translatedContent"></pre>
                     </div>
                 </div>
 
@@ -377,6 +393,7 @@
                 this.notes = [];
                 this.currentNote = null;
                 this.isLoading = false;
+                this.translationRequest = 0;
                 this.init();
             }
 
@@ -388,6 +405,7 @@
             bindEvents() {
                 document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
+                document.getElementById('translateBtn').addEventListener('click', () => this.translateNote());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 
@@ -404,6 +422,7 @@
                 
                 document.getElementById('noteTitle').addEventListener('input', autoSave);
                 document.getElementById('noteContent').addEventListener('input', autoSave);
+                document.getElementById('noteContent').addEventListener('input', () => this.clearTranslation());
             }
 
             async loadNotes() {
@@ -447,6 +466,7 @@
                 if (!note) return;
 
                 this.currentNote = note;
+                this.clearTranslation();
                 this.showEditor();
                 this.renderNotesList(); // Re-render to update active state
                 
@@ -456,6 +476,7 @@
             }
 
             createNewNote() {
+                this.clearTranslation();
                 this.currentNote = {
                     id: null,
                     title: '',
@@ -480,14 +501,61 @@
                 document.getElementById('emptyState').style.display = 'none';
                 document.getElementById('editorForm').style.display = 'block';
                 document.getElementById('editorActions').style.display = 'flex';
+                document.getElementById('deleteBtn').hidden = !this.currentNote.id;
             }
 
             hideEditor() {
+                this.clearTranslation();
                 document.getElementById('emptyState').style.display = 'block';
                 document.getElementById('editorForm').style.display = 'none';
                 document.getElementById('editorActions').style.display = 'none';
                 document.getElementById('editorTitle').textContent = 'Select a note to edit';
                 this.currentNote = null;
+            }
+
+            clearTranslation() {
+                this.translationRequest++;
+                document.getElementById('translationResult').hidden = true;
+                document.getElementById('translatedContent').textContent = '';
+                const button = document.getElementById('translateBtn');
+                button.disabled = false;
+                button.textContent = 'Translate';
+            }
+
+            async translateNote() {
+                const content = document.getElementById('noteContent').value;
+                if (!content.trim()) {
+                    this.showMessage('Enter note content to translate', 'error');
+                    return;
+                }
+
+                this.clearTranslation();
+                const requestId = this.translationRequest;
+                const button = document.getElementById('translateBtn');
+                button.disabled = true;
+                button.textContent = 'Translating...';
+
+                try {
+                    const response = await fetch('/api/notes/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content })
+                    });
+                    if (!response.ok) throw new Error('Translation failed. Please try again.');
+
+                    const result = await response.json();
+                    if (requestId !== this.translationRequest) return;
+                    document.getElementById('translatedContent').textContent = result.translation;
+                    document.getElementById('translationResult').hidden = false;
+                    this.hideMessage();
+                } catch (error) {
+                    if (requestId === this.translationRequest) this.showMessage(error.message, 'error');
+                } finally {
+                    if (requestId === this.translationRequest) {
+                        button.disabled = false;
+                        button.textContent = 'Translate';
+                    }
+                }
             }
 
             async saveNote(isAutoSave = false) {
@@ -530,6 +598,7 @@
 
                     const savedNote = await response.json();
                     this.currentNote = savedNote;
+                    this.showEditor();
                     
                     // Update notes list
                     const existingIndex = this.notes.findIndex(n => n.id === savedNote.id);
