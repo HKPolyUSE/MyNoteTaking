@@ -20,16 +20,19 @@ The application is deployed and accessible at: **https://3dhkilc88dkk.manus.spac
 ## 🛠 Technology Stack
 
 ### Frontend
+
 - **HTML5**: Semantic markup structure
 - **CSS3**: Modern styling with gradients, animations, and responsive design
 - **JavaScript (ES6+)**: Interactive functionality and API communication
 
 ### Backend
+
 - **Python Flask**: Web framework for API endpoints
 - **SQLAlchemy**: ORM for database operations
 - **Flask-CORS**: Cross-origin resource sharing support
 
 ### Database
+
 - **SQLite**: Lightweight, file-based database for data persistence
 
 ## 📁 Project Structure
@@ -57,17 +60,20 @@ notetaking-app/
 ## 🔧 Local Development Setup
 
 ### Prerequisites
+
 - Python 3.11+
 - pip (Python package manager)
 
 ### Installation Steps
 
 1. **Clone or download the project**
+
    ```bash
    python -m venv venv
    ```
 
 2. **Activate the virtual environment**
+
    ```bash
    source venv/bin/activate
    ```
@@ -75,11 +81,13 @@ notetaking-app/
    Remark: On Windows, use `venv\Scripts\activate`
 
 3. **Install dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Run the application**
+
    ```bash
    python src/main.py
    ```
@@ -90,6 +98,7 @@ notetaking-app/
 ## 📡 API Endpoints
 
 ### Notes API
+
 - `GET /api/notes` - Get all notes
 - `POST /api/notes` - Create a new note
 - `GET /api/notes/<id>` - Get a specific note
@@ -98,6 +107,7 @@ notetaking-app/
 - `GET /api/notes/search?q=<query>` - Search notes
 
 ### Request/Response Format
+
 ```json
 {
   "id": 1,
@@ -111,12 +121,14 @@ notetaking-app/
 ## 🎨 User Interface Features
 
 ### Sidebar
+
 - **Search Box**: Real-time search through note titles and content
 - **New Note Button**: Create new notes instantly
 - **Notes List**: Scrollable list of all notes with previews
 - **Note Previews**: Show title, content preview, and last modified date
 
 ### Editor Panel
+
 - **Title Input**: Edit note titles
 - **Content Textarea**: Rich text editing area
 - **Save Button**: Manual save option (auto-save also available)
@@ -124,6 +136,7 @@ notetaking-app/
 - **Real-time Updates**: Changes reflected immediately
 
 ### Design Elements
+
 - **Gradient Background**: Beautiful purple gradient backdrop
 - **Glass Morphism**: Semi-transparent panels with backdrop blur
 - **Smooth Animations**: Hover effects and transitions
@@ -133,6 +146,7 @@ notetaking-app/
 ## 🔒 Database Schema
 
 ### Notes Table
+
 ```sql
 CREATE TABLE note (
     id INTEGER PRIMARY KEY,
@@ -146,6 +160,7 @@ CREATE TABLE note (
 ## 🚀 Deployment
 
 The application is configured for easy deployment with:
+
 - CORS enabled for cross-origin requests
 - Host binding to `0.0.0.0` for external access
 - Production-ready Flask configuration
@@ -154,10 +169,13 @@ The application is configured for easy deployment with:
 ## 🔧 Configuration
 
 ### Environment Variables
+
 - `FLASK_ENV`: Set to `development` for debug mode
 - `SECRET_KEY`: Flask secret key for sessions
+- `OPENROUTER_API_KEY`: OpenRouter API key used by the server-side translation endpoint. Set this in the local environment or deployment settings; do not expose it in frontend code.
 
 ### Database Configuration
+
 - Database file: `src/database/app.db`
 - Automatic table creation on first run
 - SQLAlchemy ORM for database operations
@@ -185,6 +203,7 @@ This project is open source and available under the MIT License.
 ## 🆘 Support
 
 For issues or questions:
+
 1. Check the browser console for error messages
 2. Verify the Flask server is running
 3. Ensure all dependencies are installed
@@ -193,6 +212,7 @@ For issues or questions:
 ## 🎯 Future Enhancements
 
 Potential improvements for future versions:
+
 - User authentication and multi-user support
 - Note categories and tags
 - Rich text formatting (bold, italic, lists)
@@ -205,4 +225,3 @@ Potential improvements for future versions:
 ---
 
 **Built with ❤️ using Flask, SQLite, and modern web technologies**
-
