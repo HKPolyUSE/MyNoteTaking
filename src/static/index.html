@@ -157,6 +157,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
             margin-bottom: 20px;
         }
 
@@ -167,6 +169,7 @@
 
         .editor-actions {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
         }
 
@@ -187,6 +190,16 @@
 
         .btn-save:hover {
             background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .btn-translate {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-translate:hover {
+            background: #5a6fd8;
             transform: translateY(-1px);
         }
 
@@ -345,7 +358,8 @@
                     <h2 class="editor-title" id="editorTitle">Select a note to edit</h2>
                     <div class="editor-actions" id="editorActions" style="display: none;">
                         <button class="btn btn-save" id="saveBtn">💾 Save</button>
-                        <button class="btn btn-delete" id="deleteBtn">🗑️ Delete</button>
+                        <button class="btn btn-translate" id="translateBtn">🌐 Translate</button>
+                        <button class="btn btn-delete" id="deleteBtn" hidden>🗑️ Delete</button>
                     </div>
                 </div>
 
@@ -377,6 +391,9 @@
                 this.notes = [];
                 this.currentNote = null;
                 this.isLoading = false;
+                this.isTranslating = false;
+                this.autoSaveTimeout = null;
+                this.saveInFlight = null;
                 this.init();
             }
 
@@ -388,14 +405,15 @@
             bindEvents() {
                 document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
+                document.getElementById('translateBtn').addEventListener('click', () => this.translateNote());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 
                 // Auto-save on content change (debounced)
-                let saveTimeout;
                 const autoSave = () => {
-                    clearTimeout(saveTimeout);
-                    saveTimeout = setTimeout(() => {
+                    clearTimeout(this.autoSaveTimeout);
+                    this.autoSaveTimeout = setTimeout(() => {
+                        this.autoSaveTimeout = null;
                         if (this.currentNote && this.currentNote.id) {
                             this.saveNote(true);
                         }
@@ -443,6 +461,8 @@
             }
 
             async selectNote(noteId) {
+                if (this.isTranslating) return;
+
                 const note = this.notes.find(n => n.id === noteId);
                 if (!note) return;
 
@@ -456,6 +476,8 @@
             }
 
             createNewNote() {
+                if (this.isTranslating) return;
+
                 this.currentNote = {
                     id: null,
                     title: '',
@@ -480,6 +502,11 @@
                 document.getElementById('emptyState').style.display = 'none';
                 document.getElementById('editorForm').style.display = 'block';
                 document.getElementById('editorActions').style.display = 'flex';
+                this.updateDeleteButtonVisibility();
+            }
+
+            updateDeleteButtonVisibility() {
+                document.getElementById('deleteBtn').hidden = !this.currentNote || this.currentNote.id == null;
             }
 
             hideEditor() {
@@ -491,7 +518,23 @@
             }
 
             async saveNote(isAutoSave = false) {
-                if (!this.currentNote) return;
+                while (this.saveInFlight) {
+                    await this.saveInFlight;
+                }
+
+                const saveOperation = this.persistNote(isAutoSave);
+                this.saveInFlight = saveOperation;
+                try {
+                    return await saveOperation;
+                } finally {
+                    if (this.saveInFlight === saveOperation) {
+                        this.saveInFlight = null;
+                    }
+                }
+            }
+
+            async persistNote(isAutoSave = false) {
+                if (!this.currentNote) return false;
 
                 const title = document.getElementById('noteTitle').value.trim();
                 const content = document.getElementById('noteContent').value.trim();
@@ -500,7 +543,7 @@
                     if (!isAutoSave) {
                         this.showMessage('Please enter a title or content', 'error');
                     }
-                    return;
+                    return false;
                 }
 
                 try {
@@ -530,6 +573,7 @@
 
                     const savedNote = await response.json();
                     this.currentNote = savedNote;
+                    this.updateDeleteButtonVisibility();
                     
                     // Update notes list
                     const existingIndex = this.notes.findIndex(n => n.id === savedNote.id);
@@ -545,8 +589,71 @@
                     if (!isAutoSave) {
                         this.showMessage('Note saved successfully!', 'success');
                     }
+                    return true;
                 } catch (error) {
                     this.showMessage(`Error saving note: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async translateNote() {
+                if (!this.currentNote || this.isTranslating) return;
+
+                const titleInput = document.getElementById('noteTitle');
+                const contentInput = document.getElementById('noteContent');
+                const title = titleInput.value;
+                const content = contentInput.value;
+                if (!title.trim() && !content.trim()) {
+                    this.showMessage('Enter a title or content to translate', 'error');
+                    return;
+                }
+
+                this.isTranslating = true;
+                clearTimeout(this.autoSaveTimeout);
+                this.autoSaveTimeout = null;
+                [
+                    'newNoteBtn', 'saveBtn', 'translateBtn', 'deleteBtn',
+                    'noteTitle', 'noteContent'
+                ].forEach(id => {
+                    document.getElementById(id).disabled = true;
+                });
+                this.showMessage('Translating title and content...', 'loading');
+
+                try {
+                    while (this.saveInFlight) {
+                        await this.saveInFlight;
+                    }
+                    const response = await fetch('/api/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, content })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Translation failed');
+                    }
+                    if (
+                        !result ||
+                        typeof result.title !== 'string' ||
+                        typeof result.content !== 'string'
+                    ) {
+                        throw new Error('Translation response was invalid');
+                    }
+
+                    titleInput.value = result.title;
+                    contentInput.value = result.content;
+                    if (!await this.saveNote()) return;
+                    this.showMessage('Translation completed and note saved!', 'success');
+                } catch (error) {
+                    this.showMessage(`Error translating note: ${this.escapeHtml(error.message)}`, 'error');
+                } finally {
+                    this.isTranslating = false;
+                    [
+                        'newNoteBtn', 'saveBtn', 'translateBtn', 'deleteBtn',
+                        'noteTitle', 'noteContent'
+                    ].forEach(id => {
+                        document.getElementById(id).disabled = false;
+                    });
                 }
             }
 
@@ -637,4 +744,3 @@
     </script>
 </body>
 </html>
-

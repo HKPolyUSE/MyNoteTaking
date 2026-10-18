@@ -110,3 +110,15 @@ Thumbs.db
 .coverage
 coverage.xml
 *.prof
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+package-lock.json
+
+# 其他
+.DS_Store

@@ -9,6 +9,7 @@ A modern, responsive web application for managing personal notes with a beautifu
 - **Delete Notes**: Remove notes you no longer need
 - **Search Notes**: Find notes quickly by searching titles and content
 - **Auto-save**: Notes are automatically saved as you type
+- **English-Chinese Translation**: Translate note titles and content in either direction
 - **Responsive Design**: Works perfectly on desktop and mobile devices
 - **Modern UI**: Beautiful gradient design with smooth animations
 - **Real-time Updates**: Instant feedback and updates
@@ -96,6 +97,22 @@ notetaking-app/
 - `PUT /api/notes/<id>` - Update a note
 - `DELETE /api/notes/<id>` - Delete a note
 - `GET /api/notes/search?q=<query>` - Search notes
+- `POST /api/translate` - Translate note title and content between English and Chinese
+
+The translation endpoint accepts and returns JSON with `title` and `content` string fields:
+
+```json
+{
+  "title": "Hello",
+  "content": "A note to translate"
+}
+```
+
+Successful responses contain translated `title` and `content` values. The editor's
+Translate action replaces and saves both fields. Set `OPENROUTER_API_KEY` in the
+environment (or in a root `.env` file) to enable translations; `OPENROUTER_MODEL`
+can optionally override the default model. The system prompt is stored in
+[`prompts/translate_prompt.md`](./prompts/translate_prompt.md).
 
 ### Request/Response Format
 ```json
@@ -205,4 +222,3 @@ Potential improvements for future versions:
 ---
 
 **Built with ❤️ using Flask, SQLite, and modern web technologies**
-
